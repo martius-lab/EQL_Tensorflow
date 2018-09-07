@@ -1,0 +1,29 @@
+{
+    "batch_size": 20,
+    "beta1": 0.4,
+    "bound": 10,
+    "complexity_threshold": 0.01,
+    "epoch_factor": 1000,
+    "generate_symbolic_expr": true,
+    "id": 1,
+    "kill_summaries": false,
+    "l0_threshold": 0.008,
+    "layer_width": 10,
+    "learning_rate": 0.0005,
+    "model_base_dir": "results",
+    "model_dir": "results\\1",
+    "network_init_seed": null,
+    "num_h_layers": 1,
+    "penalty_bounds": null,
+    "penalty_every": 50,
+    "reg_scale": 1e-05,
+    "reg_sched": [
+        0.25,
+        0.95
+    ],
+    "test_div_threshold": 0.0001,
+    "test_file": "data/F1data_test",
+    "train_val_file": "data/F1data_train_val",
+    "train_val_split": 0.9,
+    "weight_init_param": 1.0
+}
