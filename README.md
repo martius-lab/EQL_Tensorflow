@@ -1,4 +1,4 @@
-# Equation Learner
+# [Equation Learner](https://al.is.tuebingen.mpg.de/publications/sahoolampertmartius2018-eqldiv).
 
 By [Subham S. Sahoo](https://arxiv.org/search/cs?searchtype=author&query=Sahoo%2C+S+S), [Christoph H. Lampert](https://cvml.ist.ac.at/) and [Georg Martius](http://georg.playfulmachines.com/)
 
@@ -15,7 +15,8 @@ Autonomous Learning Group, [Max Planck Institute](https://is.tuebingen.mpg.de/) 
 
 ## Introduction
 
-This repository contains TensorFlow implementation of the architecture ftom the ICML 2018 paper ["Learning Equations for Extrapolation and Control"](https://arxiv.org/abs/1806.07259). This work proposes a neural network architecture for symbolic regression.
+This repository contains TensorFlow implementation of the EQL-Div architecture presented in ICML 2018 paper ["Learning Equations for Extrapolation and Control"](https://al.is.tuebingen.mpg.de/publications/sahoolampertmartius2018-eqldiv). This work proposes a neural network architecture for symbolic regression.
+There is also a [Theano implementation, see martius-lab/EQL](https://github.com/martius-lab/EQL).
 
 
 ## Usage
