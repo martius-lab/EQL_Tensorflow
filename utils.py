@@ -13,7 +13,7 @@ import tensorflow as tf
 network_parameters = {'train_val_split': .9,  # how data in train_val_file is split, .9 means 90% train 10% validation
                       'layer_width': 10,  # number of identical nodes per hidden layer
                       'batch_size': 20,  # size of data batches used for training
-                      'learning_rate': 5e-4,
+                      'learning_rate': 5e-3,
                       'beta1': .4,
                       'l0_threshold': .05,  # threshold for regularization, see paper: chapter 2.3 Reg Phases
                       'reg_scale': 1e-5,

@@ -80,8 +80,7 @@ def model_fn(features, labels, mode, params):
         P_theta = tf.reduce_sum(tf.get_collection('Threshold_penalties'))
         penalty_loss = P_theta + bound_penalty
         mse_loss = tf.losses.mean_squared_error(labels, predictions)
-        normal_loss = tf.losses.get_total_loss() + P_theta
-        loss = penalty_loss if penalty_flag else normal_loss
+        loss = tf.losses.get_total_loss() + P_theta
         train_accuracy = tf.identity(
             tf.metrics.percentage_below(values=tf.abs(labels - predictions), threshold=0.02)[1], name='train_accuracy')
         tf.summary.scalar('total_loss', loss, family='losses')
@@ -108,16 +107,9 @@ if __name__ == '__main__':
                                        params=runtime_params)
     logging_hook = tf.train.LoggingTensorHook(tensors={'train_accuracy': 'train_accuracy'}, every_n_iter=1000)
     evaluation_hook = set_evaluation_hook(**runtime_params)
-    max_episode = get_max_episode(**runtime_params)
-
-    train_input, penalty_train_input, val_input, test_input = get_input_fns(**runtime_params, **metadata)
-    print('One train episode equals %d normal epochs and 1 penalty epoch.' % runtime_params['penalty_every'])
-    for train_episode in range(1, max_episode + 1):
-        print('Train episode: %d out of %d.' % (train_episode, max_episode))
-        penalty_flag = True
-        eqlearner.train(input_fn=penalty_train_input)
-        penalty_flag = False
-        eqlearner.train(input_fn=train_input, hooks=[logging_hook])
+    max_epoch = runtime_params['epoch_factor']
+    train_input, val_input, test_input = get_input_fns(num_epochs=max_epoch, **runtime_params, **metadata)
+    eqlearner.train(input_fn=train_input, hooks=[logging_hook])
     print('Training complete. Evaluating...')
     val_results = eqlearner.evaluate(input_fn=val_input, name='validation', hooks=[evaluation_hook])
     results = dict(val_error=val_results['loss'], complexity=evaluation_hook.get_complexity())

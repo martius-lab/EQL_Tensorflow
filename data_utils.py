@@ -111,6 +111,42 @@ def input_from_data(data, batch_size, repeats):
     return xs, ys
 
 
+def ds_from_generator(data):
+
+    def generator():
+        for sample in zip(*data):
+            yield sample
+
+    return tf.data.Dataset.from_generator(generator, output_types=(tf.float32, tf.float32),
+                                          output_shapes=(tf.TensorShape((data[0].shape[-1],)),
+                                                         tf.TensorShape((data[1].shape[-1],))))
+
+
+def input_from_data2(data, batch_size, repeats, data2=None):
+    """
+    Function turning data into input for the network. Provides enough data for *repeats* epochs.
+    :param data: numpy array of data
+    :param batch_size: size of batch returned, only relevant for training regime
+    :param repeats: integer factor determining how many times (epochs) data is reused
+    :param data2: more potential data to use in same batch as data
+    :return: *repeats* times data split into inputs and labels in batches
+    """
+    if data2 is not None:
+        eff_batch_size = batch_size - 1
+    else:
+        eff_batch_size = batch_size
+
+    ds1 = ds_from_generator(data).shuffle(buffer_size=1000).batch(eff_batch_size).repeat(repeats)
+
+    if data2 is not None:
+        ds2 = ds_from_generator(data2).batch(1).repeat(repeats)
+        ds = tf.data.Dataset.zip((ds1, ds2))
+        (x1, y1), (x2, y2) = ds.make_one_shot_iterator().get_next()
+        return tf.concat([x1, x2], axis=0), tf.concat([y1, y2], axis=0)
+    else:
+        return ds1.make_one_shot_iterator().get_next()
+
+
 def get_penalty_data(num_examples, penalty_bounds, num_inputs, num_outputs):
     """
     Function returning penalty data. In penalty epoch labels are irrelevant, therefore labels are set to zero.
@@ -127,7 +163,7 @@ def get_penalty_data(num_examples, penalty_bounds, num_inputs, num_outputs):
     return xs, ys
 
 
-def get_input_fns(train_val_split, batch_size, train_val_file, test_file, penalty_every, num_inputs, num_outputs,
+def get_input_fns(num_epochs, train_val_split, batch_size, train_val_file, test_file, penalty_every, num_inputs, num_outputs,
                   train_val_examples, penalty_bounds, extracted_penalty_bounds, **_):
     """
     Routine to determine which input function to use for training(normal or penalty epoch) / validation / testing.
@@ -148,15 +184,14 @@ def get_input_fns(train_val_split, batch_size, train_val_file, test_file, penalt
     train_data, val_data = data_from_file(train_val_file, split=train_val_split)
     penalty_data = get_penalty_data(num_examples=int(train_val_split * train_val_examples),
                                     penalty_bounds=penalty_bounds, num_inputs=num_inputs, num_outputs=num_outputs)
-    train_input = lambda: input_from_data(data=train_data, batch_size=batch_size, repeats=penalty_every)
+    train_input = lambda: input_from_data2(data=train_data, batch_size=batch_size, repeats=num_epochs, data2=penalty_data)
     val_input = lambda: input_from_data(data=val_data, batch_size=batch_size, repeats=1)
-    penalty_input = lambda: input_from_data(data=penalty_data, batch_size=batch_size, repeats=1)
     if test_file is not None:
         test_data = data_from_file(test_file)
         test_input = lambda: input_from_data(data=test_data, batch_size=batch_size, repeats=1)
     else:
         test_input = None
-    return train_input, penalty_input, val_input, test_input
+    return train_input, val_input, test_input
 
 
 def extract_metadata(train_val_file, test_file, domain_bound_factor=2, res_bound_factor=10):
