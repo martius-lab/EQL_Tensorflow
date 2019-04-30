@@ -72,8 +72,9 @@ def model_fn(features, labels, mode, params):
     evaluation_hook.init_network_structure(model, params)
     global_step = tf.train.get_or_create_global_step()
     input_data = features
+    predictions = model(input_data)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        predictions = model(input_data)[:-1]  # last input element in each batch is extrapolation element, no label given
+        predictions = predictions[:-1]  # last input element in each batch is extrapolation element, no label given
         labels = labels[:-1]
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         reg_loss = tf.reduce_sum([tf.reduce_mean(reg_loss) for reg_loss in reg_losses], name='reg_loss_mean_sum')
