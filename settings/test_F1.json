@@ -1,0 +1,30 @@
+{
+    "L0_beta": 0.6666666666666666,
+    "batch_size": 20,
+    "beta1": 0.4,
+    "epochs_first_reg": 300,
+    "epochs_per_reg": 100,
+    "evaluate_every": 50,
+    "generate_symbolic_expr": true,
+    "id": 1,
+    "keys": null,
+    "kill_summaries": false,
+    "layer_width": 10,
+    "learning_rate": 0.005,
+    "model_dir": "./results/final_tests/F1",
+    "network_init_seed": null,
+    "num_h_layers": 1,
+    "output_bound": null,
+    "penalty_bounds": null,
+    "reg_scale": [
+        1e-10,
+        0.001
+    ],
+    "test_div_threshold": 0.0001,
+    "test_file": ["data/F1data_test" , "data/F1data_test"], 
+    "train_val_file": "data/F1data_train_val",
+    "train_val_split": 0.9,
+    "use_cluster": true,
+    "val_acc_thresh": 0.98,
+    "weight_init_param": 1.0
+}

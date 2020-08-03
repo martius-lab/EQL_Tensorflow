@@ -10,8 +10,9 @@ Representations of EQL functions and layers.
 """
 import sympy as sp
 import tensorflow as tf
-
-from utils import number_of_positional_arguments
+from l0_regularization import l0_dense, l0_utils
+from .utils import number_of_positional_arguments
+from tensorflow.python.ops import init_ops
 
 
 class EQL_fn(object):
@@ -92,14 +93,8 @@ def op_dict_to_eql_op_list(op_dict):
             list_of_EQL_fn.append(EQL_fn(reg_division.__call__, dict_of_ops[key][1], repeats=value.repeats))
         else:
             list_of_EQL_fn.append(EQL_fn(dict_of_ops[key][0], dict_of_ops[key][1], repeats=value))
-    return list_of_EQL_fn
-
-
-def kill_small_elements(matrix, threshold):
-    """Routine setting all elements in a matrix with absolute value smaller than a given threshold to zero."""
-    kill_matrix = tf.abs(matrix) > threshold
-    matrix = tf.multiply(tf.cast(kill_matrix, dtype=tf.float32), matrix)
-    return matrix
+    sorted_list_of_EQL_fn = sorted(list_of_EQL_fn, key=lambda fn: str(fn.sympy_fn))
+    return sorted_list_of_EQL_fn
 
 
 class EQL_Layer(object):
@@ -110,34 +105,41 @@ class EQL_Layer(object):
     Returns: Output tensor following concatenation of the chunks after passing them through corresponding activation functons
     """
 
-    def __init__(self, weight_init_scale, seed=None, **op_dict):
+    def __init__(self, op_dict, weight_init_scale, num_inputs, bias_init_value, L0_beta, is_training, seed=None):
         validate_op_dict(op_dict)
         self.list_of_ops = op_dict_to_eql_op_list(op_dict)
         self.matmul_output_dim = sum(item.get_total_dimension() for item in self.list_of_ops)
-        self.w_init_scale = weight_init_scale
+        self.w_init_scale = tf.sqrt(weight_init_scale / (num_inputs + self.matmul_output_dim))
+        self.b_init_value = bias_init_value
         self.seed = seed
+        self.L0_beta = L0_beta
+        self.is_training = is_training
 
-    def __call__(self, data, l1_reg_sched, l0_threshold):
-        layer_output = self.get_matmul_output(data, l1_reg_sched, l0_threshold)
+    def __call__(self, data, weight_reg):
+        layer_output = self.get_matmul_output(data=data, weight_reg=weight_reg)
         indices = [item.get_total_dimension() for item in self.list_of_ops]
         slices = tf.split(layer_output, indices, axis=1)
         outputs = [op(tensor_slice) for op, tensor_slice in zip(self.list_of_ops, slices)]
         return tf.concat(outputs, axis=1)
 
-    def get_matmul_output(self, data, l1_reg_sched, l0_threshold):
+    def get_matmul_output(self, data, weight_reg):
         """Method building the regularized matrix multiplication layer and returning the output for given data."""
-        k_init = tf.random_uniform_initializer(minval=-self.w_init_scale, maxval=self.w_init_scale, seed=self.seed)
-        k_regu = tf.contrib.layers.l1_regularizer(scale=l1_reg_sched)
-        layer = tf.layers.Dense(self.matmul_output_dim, kernel_initializer=k_init, kernel_regularizer=k_regu,
-                                bias_regularizer=k_regu)
+        kernel_init = tf.random_normal_initializer(stddev=self.w_init_scale, seed=self.seed)
+        bias_init = init_ops.constant_initializer(value=self.b_init_value)
+        regularizer = l0_utils.l0_regularizer(scale=weight_reg, beta=self.L0_beta)
+        layer = l0_dense.L0Dense(is_training=self.is_training, seed=self.seed, units=self.matmul_output_dim,
+                                 kernel_initializer=kernel_init, bias_initializer=bias_init,
+                                 kernel_regularizer=regularizer, bias_regularizer=regularizer)
         layer.build(data.get_shape())
-        new_kernel = kill_small_elements(layer.kernel, l0_threshold)
-        new_bias = kill_small_elements(layer.bias, l0_threshold)
-        assign_kernel = tf.assign(layer.kernel, new_kernel)
-        assign_bias = tf.assign(layer.bias, new_bias)
+        assign_kernel = tf.assign(layer.kernel, layer.kernel)
+        assign_bias = tf.assign(layer.bias, layer.bias)
         with tf.control_dependencies([assign_kernel, assign_bias]):
             layer_output = layer(data)
+            self.kernel, self.bias = layer.kernel, layer.bias
         return layer_output
+
+    def get_current_weights(self):
+        return self.kernel, self.bias
 
     def get_fns(self):
         """Method returning the functions used in layer as a list of (tf_fn, sympy fn, repeats, num_args) tuples."""
