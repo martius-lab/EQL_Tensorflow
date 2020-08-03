@@ -16,7 +16,7 @@ Autonomous Learning Group, [Max Planck Institute](https://is.tuebingen.mpg.de/) 
 
 ## Introduction
 
-This repository contains TensorFlow implementation of the architecture from the ICML 2018 paper ["Learning Equations for Extrapolation and Control"](https://arxiv.org/abs/1806.07259). This work proposes a neural network architecture for symbolic regression.
+This repository contains TensorFlow implementation of the architecture from the ICML 2018 paper ["Learning Equations for Extrapolation and Control"](https://arxiv.org/abs/1806.07259) with **l0 regularization**. This work proposes a neural network architecture for symbolic regression. 
 
 ## Dependencies:
 In Pipfile
