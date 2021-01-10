@@ -69,7 +69,7 @@ dict_of_ops = {'multiply': (tf.multiply, sp.Symbol.__mul__),
                'sub': (tf.subtract, sp.Symbol.__sub__),
                'log': (tf.log, sp.log),
                'exp': (tf.exp, sp.exp),
-               'reg_div': (reg_div, sp.Symbol.__div__)}
+               'reg_div': (reg_div, sp.Symbol.__truediv__)}
 
 
 def validate_op_dict(op_dict):
